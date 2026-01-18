@@ -140,30 +140,34 @@ erDiagram
 | status        | ENUM         | NOT NULL, DEFAULT 'ACTIVE' | 계정 상태 (ACTIVE, SUSPENDED, DELETED) |
 | created_at    | DATETIME     | NOT NULL                   | 생성일시                               |
 | updated_at    | DATETIME     | NOT NULL                   | 수정일시                               |
+| deleted_at    | DATETIME     | NULL                       | 삭제일시 (Soft Delete)                 |
 
 **인덱스**
 
 - `idx_users_email`: email (UNIQUE)
 - `idx_users_status`: status
+- `idx_users_deleted_at`: deleted_at (삭제되지 않은 레코드 필터링)
 
 ---
 
 ### 3.2 콘서트 (concerts)
 
-| 컬럼명        | 타입         | 제약조건 | 설명              |
-| ------------- | ------------ | -------- | ----------------- |
-| id            | UUID         | PK       | 고유 식별자       |
-| name          | VARCHAR(200) | NOT NULL | 콘서트명          |
-| artist        | VARCHAR(200) | NOT NULL | 아티스트/출연자   |
-| description   | TEXT         | -        | 상세 설명         |
-| thumbnail_url | VARCHAR(500) | -        | 썸네일 이미지 URL |
-| created_at    | DATETIME     | NOT NULL | 생성일시          |
-| updated_at    | DATETIME     | NOT NULL | 수정일시          |
+| 컬럼명        | 타입         | 제약조건 | 설명                   |
+| ------------- | ------------ | -------- | ---------------------- |
+| id            | UUID         | PK       | 고유 식별자            |
+| name          | VARCHAR(200) | NOT NULL | 콘서트명               |
+| artist        | VARCHAR(200) | NOT NULL | 아티스트/출연자        |
+| description   | TEXT         | -        | 상세 설명              |
+| thumbnail_url | VARCHAR(500) | -        | 썸네일 이미지 URL      |
+| created_at    | DATETIME     | NOT NULL | 생성일시               |
+| updated_at    | DATETIME     | NOT NULL | 수정일시               |
+| deleted_at    | DATETIME     | NULL     | 삭제일시 (Soft Delete) |
 
 **인덱스**
 
 - `idx_concerts_name`: name
 - `idx_concerts_artist`: artist
+- `idx_concerts_deleted_at`: deleted_at
 
 ---
 
@@ -181,12 +185,14 @@ erDiagram
 | status          | ENUM         | NOT NULL, DEFAULT 'UPCOMING' | 상태 (UPCOMING, OPEN, CLOSED, CANCELLED) |
 | created_at      | DATETIME     | NOT NULL                     | 생성일시                                 |
 | updated_at      | DATETIME     | NOT NULL                     | 수정일시                                 |
+| deleted_at      | DATETIME     | NULL                         | 삭제일시 (Soft Delete)                   |
 
 **인덱스**
 
 - `idx_schedules_concert_id`: concert_id
 - `idx_schedules_start_at`: start_at
 - `idx_schedules_status`: status
+- `idx_schedules_deleted_at`: deleted_at
 
 ---
 
@@ -205,12 +211,14 @@ erDiagram
 | version     | INT         | NOT NULL, DEFAULT 0           | 낙관적 락 버전                      |
 | created_at  | DATETIME    | NOT NULL                      | 생성일시                            |
 | updated_at  | DATETIME    | NOT NULL                      | 수정일시                            |
+| deleted_at  | DATETIME    | NULL                          | 삭제일시 (Soft Delete)              |
 
 **인덱스**
 
 - `idx_seats_schedule_id`: schedule_id
 - `idx_seats_status`: status
 - `idx_seats_composite`: (schedule_id, section, row_number, seat_number) UNIQUE
+- `idx_seats_deleted_at`: deleted_at
 
 > [!IMPORTANT]
 > **동시성 제어**: `version` 컬럼을 통한 **낙관적 락(Optimistic Lock)** 적용. 좌석 선점 시 버전 충돌 감지로 동시 예약 방지.
@@ -234,6 +242,7 @@ erDiagram
 | version      | INT      | NOT NULL, DEFAULT 0         | 낙관적 락 버전                                |
 | created_at   | DATETIME | NOT NULL                    | 생성일시                                      |
 | updated_at   | DATETIME | NOT NULL                    | 수정일시                                      |
+| deleted_at   | DATETIME | NULL                        | 삭제일시 (Soft Delete)                        |
 
 **인덱스**
 
@@ -242,6 +251,7 @@ erDiagram
 - `idx_reservations_seat_id`: seat_id (UNIQUE)
 - `idx_reservations_status`: status
 - `idx_reservations_expired_at`: expired_at (만료 예약 조회용)
+- `idx_reservations_deleted_at`: deleted_at
 
 > [!NOTE]
 > **임시 예약**: 좌석 선택 시 5분간 임시 점유 (`PENDING` 상태). 결제 완료 전 만료 시 자동 해제.
@@ -264,6 +274,7 @@ erDiagram
 | refunded_at    | DATETIME     | -                           | 환불 시간                                   |
 | created_at     | DATETIME     | NOT NULL                    | 생성일시                                    |
 | updated_at     | DATETIME     | NOT NULL                    | 수정일시                                    |
+| deleted_at     | DATETIME     | NULL                        | 삭제일시 (Soft Delete)                      |
 
 **인덱스**
 
@@ -271,6 +282,7 @@ erDiagram
 - `idx_payments_user_id`: user_id
 - `idx_payments_transaction_id`: transaction_id
 - `idx_payments_status`: status
+- `idx_payments_deleted_at`: deleted_at
 
 ---
 
@@ -286,12 +298,14 @@ erDiagram
 | issued_at      | DATETIME | NOT NULL                    | 토큰 발급 시간                  |
 | activated_at   | DATETIME | -                           | 활성화 시간 (입장 시점)         |
 | expired_at     | DATETIME | NOT NULL                    | 만료 시간                       |
+| deleted_at     | DATETIME | NULL                        | 삭제일시 (Soft Delete)          |
 
 **인덱스**
 
 - `idx_queue_user_schedule`: (user_id, schedule_id) UNIQUE
 - `idx_queue_schedule_position`: (schedule_id, queue_position)
 - `idx_queue_status`: status
+- `idx_queue_deleted_at`: deleted_at
 
 > [!TIP]
 > **대기열 시스템**: 인기 콘서트 예매 시 트래픽 폭주 방지를 위한 가상 대기열. Redis Sorted Set 활용 고려.
