@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================
+// 콘서트 도메인
+// ============================================
+
+/// 콘서트 정보
+model Concert {
+  id             String   @id @default(uuid())
+  name           String   @db.VarChar(200)
+  date           DateTime
+  venue          String   @db.VarChar(200)
+  totalSeats     Int      @map("total_seats")
+  availableSeats Int      @map("available_seats")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // 관계
+  reservations Reservation[]
+
+  @@map("concerts")
+}
+
+// ============================================
+// 예약 도메인
+// ============================================
+
+/// 예약 정보
+model Reservation {
+  id         String            @id @default(uuid())
+  concertId  String            @map("concert_id")
+  userId     String            @map("user_id")
+  seatCount  Int               @map("seat_count")
+  status     ReservationStatus @default(PENDING)
+  totalPrice Int               @map("total_price")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  // 관계
+  concert Concert @relation(fields: [concertId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("reservations")
+}
+
+/// 예약 상태
+enum ReservationStatus {
+  PENDING // 대기중
+  CONFIRMED // 확정
+  CANCELLED // 취소
+}
+
+// ============================================
+// 사용자 도메인
+// ============================================
+
+/// 사용자 정보
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 관계
+  reservations Reservation[]
+
+  @@map("users")
+}
