@@ -36,6 +36,7 @@ erDiagram
         enum status
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     CONCERT {
@@ -46,6 +47,7 @@ erDiagram
         varchar thumbnail_url
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     CONCERT_SCHEDULE {
@@ -59,6 +61,7 @@ erDiagram
         enum status
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     SEAT {
@@ -73,6 +76,7 @@ erDiagram
         int version
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     RESERVATION {
@@ -89,6 +93,7 @@ erDiagram
         int version
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     PAYMENT {
@@ -104,6 +109,7 @@ erDiagram
         datetime refunded_at
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     QUEUE_TOKEN {
@@ -115,6 +121,7 @@ erDiagram
         datetime issued_at
         datetime activated_at
         datetime expired_at
+        datetime deleted_at
     }
 ```
 
