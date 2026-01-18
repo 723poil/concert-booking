@@ -12,8 +12,6 @@
 | **MySQL**      | 데이터베이스      |
 | **Winston**    | 로깅              |
 
-> 📖 기술 선택 이유는 [ARCHITECTURE_DECISIONS.md](./docs/ARCHITECTURE_DECISIONS.md)를 참고하세요.
-
 ## 요구 사항
 
 - Node.js 24+ (`.nvmrc` 참고)
