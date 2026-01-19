@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConcertModule } from './domain/concert/concert.module';
 import { AuthModule } from './infrastructure/auth';
 import { LoggerModule } from './infrastructure/logger';
 import { JwtAuthGuard } from './presentation/auth';
@@ -21,6 +22,8 @@ import { AuthPresentationModule } from './presentation/auth/auth.module';
     AuthModule,
     // 인증 프레젠테이션 모듈
     AuthPresentationModule,
+    // 콘서트 모듈
+    ConcertModule,
   ],
   controllers: [AppController],
   providers: [
