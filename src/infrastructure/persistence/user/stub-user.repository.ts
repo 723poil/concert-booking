@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { IUserRepository, User, UserRole } from '../../domain';
-import { BcryptPasswordService } from '../auth/bcrypt-password.service';
+import { IUserRepository, User, UserRole, UserStatus } from '../../../domain/user';
+import { BcryptPasswordService } from '../../auth/bcrypt-password.service';
 
 /**
  * User Repository Stub
  *
  * 개발/테스트용 임시 리포지토리입니다.
- * 실제 데이터베이스 연동 전까지 사용합니다.
- *
- * TODO: Prisma 기반 실제 구현체로 교체 필요
+ * 실제 데이터베이스 연동이 어렵거나 단위 테스트 시 사용합니다.
  */
 @Injectable()
-export class UserRepositoryStub implements IUserRepository {
+export class StubUserRepository implements IUserRepository {
   private users: Map<string, User> = new Map();
   private passwordService = new BcryptPasswordService();
 
@@ -29,6 +27,7 @@ export class UserRepositoryStub implements IUserRepository {
       password: hashedPassword,
       name: '테스트 사용자',
       role: UserRole.USER,
+      status: UserStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -40,6 +39,7 @@ export class UserRepositoryStub implements IUserRepository {
       password: hashedPassword,
       name: '관리자',
       role: UserRole.ADMIN,
+      status: UserStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
