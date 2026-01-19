@@ -49,6 +49,7 @@ docs/
 
 - [🚩 프로젝트 목표 (Project Goals)](docs/PROJECT_GOALS.md)
 - [📊 데이터베이스 설계 (ERD)](docs/ERD.md)
+- [🎫 콘서트 예약 시나리오](docs/scenarios/reservation.md)
 
 ## 라이선스
 
