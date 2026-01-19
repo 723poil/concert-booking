@@ -17,24 +17,7 @@
 - Node.js 24+ (`.nvmrc` 참고)
 - MySQL 8.0+
 
-## 설치 및 실행
-
-```bash
-# 의존성 설치
-npm install
-
-# 환경 변수 설정
-cp .env.example .env
-# .env 파일에서 DATABASE_URL 수정
-
-# Prisma 클라이언트 생성
-npx prisma generate
-
-# 개발 서버 실행
-npm run start:dev
-```
-
-## 프로젝트 구조 (DDD 기반)
+## 프로젝트 구조
 
 ```
 src/
@@ -58,18 +41,14 @@ prisma/
 └── schema.prisma        # DB 스키마 정의
 
 docs/
-└── ARCHITECTURE_DECISIONS.md  # 기술 선택 이유 (ADR)
+├── PROJECT_GOALS.md           # 프로젝트 목표 및 테스트 시나리오
+├── ERD.md                     # 데이터베이스 설계 (ERD)
 ```
 
-## 스크립트
+## 관련 문서
 
-```bash
-npm run start:dev    # 개발 서버 (watch mode)
-npm run build        # 빌드
-npm run start:prod   # 프로덕션 실행
-npm run test         # 단위 테스트
-npm run test:e2e     # E2E 테스트
-```
+- [🚩 프로젝트 목표 (Project Goals)](docs/PROJECT_GOALS.md)
+- [📊 데이터베이스 설계 (ERD)](docs/ERD.md)
 
 ## 라이선스
 

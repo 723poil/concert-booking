@@ -2,79 +2,231 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider   = "prisma-client"
-  engineType = "client"
-  output     = "./generated"
+  provider = "prisma-client"
+  output   = "./generated"
 }
 
 datasource db {
   provider = "mysql"
 }
 
-// ============================================
-// 콘서트 도메인
-// ============================================
+// 1. 사용자 (User) - 회원 정보 및 인증
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique @db.VarChar(255)
+  name         String     @db.VarChar(100)
+  passwordHash String?    @map("password_hash") @db.VarChar(255)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
 
-/// 콘서트 정보
-model Concert {
-  id             String   @id @default(uuid())
-  name           String   @db.VarChar(200)
-  date           DateTime
-  venue          String   @db.VarChar(200)
-  totalSeats     Int      @map("total_seats")
-  availableSeats Int      @map("available_seats")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  // 관계
   reservations Reservation[]
+  payments     Payment[]
+  queueTokens  QueueToken[]
 
+  @@index([status])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+// 2. 콘서트 (Concert) - 공연 정보 관리
+model Concert {
+  id           String    @id @default(uuid())
+  name         String    @db.VarChar(200)
+  artist       String?   @db.VarChar(200)
+  description  String?   @db.Text
+  thumbnailUrl String?   @map("thumbnail_url") @db.VarChar(500)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  schedules ConcertSchedule[]
+
+  @@index([name])
+  @@index([artist])
+  @@index([deletedAt])
   @@map("concerts")
 }
 
-// ============================================
-// 예약 도메인
-// ============================================
+// 3. 콘서트 스케줄 (ConcertSchedule)
+model ConcertSchedule {
+  id             String         @id @default(uuid())
+  concertId      String         @map("concert_id")
+  startAt        DateTime       @map("start_at")
+  endAt          DateTime       @map("end_at")
+  venue          String         @db.VarChar(200)
+  totalSeats     Int            @map("total_seats")
+  availableSeats Int            @map("available_seats")
+  status         ScheduleStatus @default(UPCOMING)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
 
-/// 예약 정보
+  concert      Concert       @relation(fields: [concertId], references: [id])
+  seats        Seat[]
+  reservations Reservation[]
+  queueTokens  QueueToken[]
+
+  @@index([concertId])
+  @@index([startAt])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("concert_schedules")
+}
+
+enum ScheduleStatus {
+  UPCOMING
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+// 4. 좌석 (Seat)
+model Seat {
+  id         String     @id @default(uuid())
+  scheduleId String     @map("schedule_id")
+  section    String     @db.VarChar(50)
+  rowNumber  Int        @map("row_number")
+  seatNumber Int        @map("seat_number")
+  grade      SeatGrade
+  price      Int
+  status     SeatStatus @default(AVAILABLE)
+  version    Int        @default(0) // 낙관적 락을 위한 버전
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  deletedAt  DateTime?  @map("deleted_at")
+
+  schedule    ConcertSchedule @relation(fields: [scheduleId], references: [id])
+  reservation Reservation? // 1:1 관계 (예약된 경우)
+
+  @@unique([scheduleId, section, rowNumber, seatNumber])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("seats")
+}
+
+enum SeatGrade {
+  VIP
+  R
+  S
+  A
+}
+
+enum SeatStatus {
+  AVAILABLE
+  HOLDING
+  RESERVED
+}
+
+// 5. 예약 (Reservation)
 model Reservation {
-  id         String            @id @default(uuid())
-  concertId  String            @map("concert_id")
-  userId     String            @map("user_id")
-  seatCount  Int               @map("seat_count")
-  status     ReservationStatus @default(PENDING)
-  totalPrice Int               @map("total_price")
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
+  id          String            @id @default(uuid())
+  userId      String            @map("user_id")
+  scheduleId  String            @map("schedule_id")
+  seatId      String            @unique @map("seat_id")
+  status      ReservationStatus @default(PENDING)
+  totalPrice  Int               @map("total_price")
+  reservedAt  DateTime          @map("reserved_at") // 임시 예약 시간
+  expiredAt   DateTime          @map("expired_at") // 임시 예약 만료 시간
+  confirmedAt DateTime?         @map("confirmed_at")
+  cancelledAt DateTime?         @map("cancelled_at")
+  version     Int               @default(0) // 낙관적 락 버전
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
 
-  // 관계
-  concert Concert @relation(fields: [concertId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+  schedule ConcertSchedule @relation(fields: [scheduleId], references: [id])
+  seat     Seat            @relation(fields: [seatId], references: [id])
+  payment  Payment?
 
+  @@index([userId])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([expiredAt])
+  @@index([deletedAt])
   @@map("reservations")
 }
 
-/// 예약 상태
 enum ReservationStatus {
-  PENDING // 대기중
-  CONFIRMED // 확정
-  CANCELLED // 취소
+  PENDING
+  CONFIRMED
+  EXPIRED
+  CANCELLED
 }
 
-// ============================================
-// 사용자 도메인
-// ============================================
+// 6. 결제 (Payment)
+model Payment {
+  id            String        @id @default(uuid())
+  reservationId String        @unique @map("reservation_id")
+  userId        String        @map("user_id")
+  amount        Int
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?       @map("transaction_id") @db.VarChar(100)
+  pgResponse    Json?         @map("pg_response")
+  paidAt        DateTime?     @map("paid_at")
+  refundedAt    DateTime?     @map("refunded_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
 
-/// 사용자 정보
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique @db.VarChar(255)
-  name      String   @db.VarChar(100)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
 
-  // 관계
-  reservations Reservation[]
+  @@index([userId])
+  @@index([transactionId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payments")
+}
 
-  @@map("users")
+enum PaymentMethod {
+  CARD
+  KAKAO_PAY
+  NAVER_PAY
+  TOSS
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// 7. 대기열 (Queue)
+model QueueToken {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  scheduleId    String      @map("schedule_id")
+  queuePosition Int         @map("queue_position")
+  status        QueueStatus @default(WAITING)
+  issuedAt      DateTime    @default(now()) @map("issued_at")
+  activatedAt   DateTime?   @map("activated_at")
+  expiredAt     DateTime    @map("expired_at")
+  deletedAt     DateTime?   @map("deleted_at")
+
+  user     User            @relation(fields: [userId], references: [id])
+  schedule ConcertSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@unique([userId, scheduleId]) // 유저는 스케줄당 하나의 토큰만 가질 수 있음
+  @@index([scheduleId, queuePosition])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("queue_tokens")
+}
+
+enum QueueStatus {
+  WAITING
+  ACTIVE
+  EXPIRED
 }
