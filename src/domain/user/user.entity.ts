@@ -13,13 +13,20 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DELETED = 'DELETED',
+}
+
 export class User {
   private constructor(
     private readonly _id: string,
     private readonly _email: string,
     private _password: string,
     private readonly _name: string,
-    private readonly _role: UserRole,
+    private readonly _role: UserRole, // 스키마에는 없으나 로직상 유지 (Default: USER)
+    private _status: UserStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
     private _deletedAt: Date | null,
@@ -46,6 +53,10 @@ export class User {
     return this._role;
   }
 
+  get status(): UserStatus {
+    return this._status;
+  }
+
   get createdAt(): Date {
     return this._createdAt;
   }
@@ -65,6 +76,7 @@ export class User {
     password: string;
     name: string;
     role?: UserRole;
+    status?: UserStatus;
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date | null;
@@ -87,6 +99,7 @@ export class User {
       props.password,
       props.name,
       props.role ?? UserRole.USER,
+      props.status ?? UserStatus.ACTIVE,
       props.createdAt ?? new Date(),
       props.updatedAt ?? new Date(),
       props.deletedAt ?? null,
@@ -99,7 +112,8 @@ export class User {
     email: string;
     password: string;
     name: string;
-    role: UserRole;
+    role?: UserRole;
+    status?: UserStatus;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;
@@ -109,7 +123,8 @@ export class User {
       props.email,
       props.password,
       props.name,
-      props.role,
+      props.role ?? UserRole.USER,
+      props.status ?? UserStatus.ACTIVE,
       props.createdAt,
       props.updatedAt,
       props.deletedAt,
@@ -122,6 +137,7 @@ export class User {
       throw new Error('이미 삭제된 사용자입니다.');
     }
     this._deletedAt = new Date();
+    this._status = UserStatus.DELETED;
     this._updatedAt = new Date();
   }
 
@@ -130,6 +146,7 @@ export class User {
       throw new Error('삭제되지 않은 사용자입니다.');
     }
     this._deletedAt = null;
+    this._status = UserStatus.ACTIVE;
     this._updatedAt = new Date();
   }
 

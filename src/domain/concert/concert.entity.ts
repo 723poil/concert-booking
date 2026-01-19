@@ -1,19 +1,16 @@
 /**
  * Concert 도메인 엔티티
  *
- * DDD의 핵심 개념인 도메인 엔티티입니다.
- * - Prisma 모델과 분리된 순수 도메인 객체
- * - 비즈니스 로직을 메서드로 캡슐화
- * - 불변성과 유효성 검증 포함
+ * 공연의 기본 정보(이름, 아티스트 등)를 관리합니다.
+ * 스케줄 정보는 ConcertSchedule 애그리거트에서 별도로 관리합니다.
  */
 export class Concert {
-  private constructor(
+  constructor(
     private readonly _id: string,
     private readonly _name: string,
-    private readonly _date: Date,
-    private readonly _venue: string,
-    private readonly _totalSeats: number,
-    private _availableSeats: number,
+    private readonly _artist: string,
+    private readonly _description: string | null,
+    private readonly _thumbnailUrl: string | null,
     private readonly _createdAt: Date,
     private readonly _updatedAt: Date,
   ) {}
@@ -27,20 +24,16 @@ export class Concert {
     return this._name;
   }
 
-  get date(): Date {
-    return this._date;
+  get artist(): string {
+    return this._artist;
   }
 
-  get venue(): string {
-    return this._venue;
+  get description(): string | null {
+    return this._description;
   }
 
-  get totalSeats(): number {
-    return this._totalSeats;
-  }
-
-  get availableSeats(): number {
-    return this._availableSeats;
+  get thumbnailUrl(): string | null {
+    return this._thumbnailUrl;
   }
 
   get createdAt(): Date {
@@ -55,54 +48,20 @@ export class Concert {
   static create(props: {
     id: string;
     name: string;
-    date: Date;
-    venue: string;
-    totalSeats: number;
-    availableSeats?: number;
+    artist: string;
+    description?: string | null;
+    thumbnailUrl?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
   }): Concert {
-    if (props.totalSeats <= 0) {
-      throw new Error('총 좌석 수는 0보다 커야 합니다.');
-    }
-
     return new Concert(
       props.id,
       props.name,
-      props.date,
-      props.venue,
-      props.totalSeats,
-      props.availableSeats ?? props.totalSeats,
+      props.artist,
+      props.description ?? null,
+      props.thumbnailUrl ?? null,
       props.createdAt ?? new Date(),
       props.updatedAt ?? new Date(),
     );
-  }
-
-  // 비즈니스 로직
-  canReserve(seatCount: number): boolean {
-    return this._availableSeats >= seatCount;
-  }
-
-  reserve(seatCount: number): void {
-    if (!this.canReserve(seatCount)) {
-      throw new Error('예약 가능한 좌석이 부족합니다.');
-    }
-    this._availableSeats -= seatCount;
-  }
-
-  cancelReservation(seatCount: number): void {
-    const newAvailable = this._availableSeats + seatCount;
-    if (newAvailable > this._totalSeats) {
-      throw new Error('취소할 좌석 수가 올바르지 않습니다.');
-    }
-    this._availableSeats = newAvailable;
-  }
-
-  isUpcoming(): boolean {
-    return this._date > new Date();
-  }
-
-  isSoldOut(): boolean {
-    return this._availableSeats === 0;
   }
 }
